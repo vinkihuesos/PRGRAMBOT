@@ -36,7 +36,7 @@ async def handle_create_game_wbot(callback: types.CallbackQuery, bot: Bot, state
 ➕ *Создание игры в* 🎲 *Emoji-Game*
 
 • Мин. Ставка: 5.000  PR GRAM 
-• Макс. Ставка: 1.000.000  PR GRAM 
+• Макс. Ставка: 500.000  PR GRAM 
 💰 Ваш баланс: {user["balance"]:,}  PR GRAM 
 
 ℹ️ Введите размер ставки
@@ -52,8 +52,8 @@ async def handle_create_game_wbot(callback: types.CallbackQuery, bot: Bot, state
 @router.message(GameState.waiting_for_bet, F.text.isdigit())
 async def process_bet_wbot(message: types.Message, state: FSMContext, bot: Bot):
     amount = int(message.text)
-    if not (5000 <= amount <= 1000000):
-        await message.answer("❌ *Ставка должна быть от 5000 до 1000000 PR GRAM*", parse_mode="Markdown")
+    if not (5000 <= amount <= 500000):
+        await message.answer("❌ *Ставка должна быть от 5.000 до 500.000 PR GRAM*", parse_mode="Markdown")
         return
 
     user = await get_user(message.from_user.id)
