@@ -14,7 +14,7 @@ async def on_start(message: types.Message, command: CommandObject, bot: Bot):
     user_id = message.from_user.id
     args = command.args  # Получаем аргумент реферальной ссылки
     referrer_id = int(args) if args and args.isdigit() else None
-    
+    print(referrer_id)
     user = await get_user(user_id)
     if not user:
         await add_user(user_id, referrer_id)  # Добавляем юзера и реферала
@@ -85,25 +85,3 @@ async def check_subscription_callback(callback: types.CallbackQuery, bot: Bot):
         await callback.answer()
     else:
         await callback.answer("❌ Вы еще не подписались на канал!", show_alert=True)
-
-@router.message(F.text == "Заработать PR GRAM")
-async def referral_system(message: types.Message, bot: Bot):
-    user_id = message.from_user.id
-    referral_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
-    user = await get_user(user_id)
-    referrals = user.get("referrals", []) if user else []
-    count = len(referrals)
-    text = f"""
-Получай +1000  PR GRAM ️ за каждого приглашенного друга!
-
-📎 Твоя реферальная ссылка:
-{referral_link}
-
-🎉 Приглашай по этой ссылке своих друзей, отправляй её во все чаты и зарабатывай!
-
-Приглашено вами: {count}
-"""
-    await bot.send_message(chat_id=message.chat.id, text=text)
-
-def register(dp):
-    dp.include_router(router)

@@ -201,7 +201,7 @@ async def play_game_wplayer(
     creator_total, opponent_total, rolled_dices = await send_game_turn(
         bot, creator_id, opponent_id, emoji, count, creator_username, opponent_username
     )
-
+    print(rolled_dices)
     await bot.send_message(creator_id, "Ждем итогов игры 🔥")
     await bot.send_message(opponent_id, "Ждем итогов игры 🔥")
     await asyncio.sleep(4)
@@ -210,7 +210,7 @@ async def play_game_wplayer(
     await determine_winner(
         bot, creator_id, opponent_id, game_bid, 
         creator_total, opponent_total, 
-        creator_username, opponent_username, rolled_dices
+        creator_username, opponent_username, rolled_dices, emoji, count
     )
 
 
@@ -222,31 +222,75 @@ async def send_game_turn(
     rolled_dices = []
 
     # Уведомление о ходе создателя
-    await bot.send_message(creator_id, f"👀 Ход @{creator_username}")
-    await bot.send_message(opponent_id, f"👀 Ход @{creator_username}")
+    await bot.send_message(creator_id, f"""
+👀 Ход @{creator_username}
+            
+⬇️⬇️⬇️⬇️⬇️
+""")
+    await bot.send_message(opponent_id, f"""
+👀 Ход @{creator_username}
+            
+⬇️⬇️⬇️⬇️⬇️
+""")
 
     # Бросаем дайсы для создателя и пересылаем их оппоненту
     for _ in range(count):
-        dice_message = await bot.send_dice(creator_id, emoji=emoji)  # Бросаем дайс у создателя
-
-        dice_value = dice_message.dice.value  # Получаем значение броска
+        dice_message = await bot.send_dice(creator_id, emoji=emoji)
+        dice_value = dice_message.dice.value
         rolled_dices.append(dice_value)
-        creator_total += dice_value
+        
+        # Логика для футбола (⚽)
+        if emoji == '⚽':
+            if dice_value <= 2:
+                creator_total += 0  # Мяч не забит
+            else:
+                creator_total += 1  # Гол!
+        # Логика для баскетбола (🏀)
+        elif emoji == '🏀':
+            if dice_value <= 3:
+                creator_total += 0  # Мяч не попал в корзину
+            else:
+                creator_total += 1  # Попадание!
+        # Для остальных эмодзи просто складываем значения
+        else:
+            creator_total += dice_value
 
         # Пересылаем дайс оппоненту
         await bot.forward_message(opponent_id, creator_id, dice_message.message_id)
 
     # Уведомление о ходе оппонента
-    await bot.send_message(creator_id, f"👀 Ход @{opponent_username}")
-    await bot.send_message(opponent_id, f"👀 Ход @{opponent_username}")
+    await bot.send_message(creator_id, f"""
+👀 Ход @{opponent_username}
+            
+⬇️⬇️⬇️⬇️⬇️
+""")
+    await bot.send_message(opponent_id, f"""
+👀 Ход @{opponent_username}
+            
+⬇️⬇️⬇️⬇️⬇️
+""")
 
     # Бросаем дайсы для оппонента и пересылаем их создателю
     for _ in range(count):
-        dice_message = await bot.send_dice(opponent_id, emoji=emoji)  # Бросаем дайс у оппонента
-
-        dice_value = dice_message.dice.value  # Получаем значение броска
+        dice_message = await bot.send_dice(opponent_id, emoji=emoji)
+        dice_value = dice_message.dice.value
         rolled_dices.append(dice_value)
-        opponent_total += dice_value
+        
+        # Логика для футбола (⚽)
+        if emoji == '⚽':
+            if dice_value <= 2:
+                opponent_total += 0  # Мяч не забит
+            else:
+                opponent_total += 1  # Гол!
+        # Логика для баскетбола (🏀)
+        elif emoji == '🏀':
+            if dice_value <= 3:
+                opponent_total += 0  # Мяч не попал в корзину
+            else:
+                opponent_total += 1  # Попадание!
+        # Для остальных эмодзи просто складываем значения
+        else:
+            opponent_total += dice_value
 
         # Пересылаем дайс создателю
         await bot.forward_message(creator_id, opponent_id, dice_message.message_id)
@@ -255,61 +299,139 @@ async def send_game_turn(
 
 
 
-# Определение победителя
 async def determine_winner(
-    bot: Bot, creator_id: int, opponent_id: int, game_bid: int, 
-    creator_total: int, opponent_total: int, 
-    creator_username: str, opponent_username: str, rolled_dices: list
+    bot: Bot, 
+    creator_id: int, 
+    opponent_id: int, 
+    bet_amount: int, 
+    creator_total: int, 
+    opponent_total: int, 
+    creator_username: str, 
+    opponent_username: str,
+    rolled_dices: list,
+    emoji: str, 
+    count: int
 ):
-    if opponent_total > creator_total:
-        winner_id, loser_id = opponent_id, creator_id
-        winner_username, loser_username = opponent_username, creator_username
-        outcome_winner, outcome_loser = "🥇 Вы победили!", "😞 Вы проиграли"
-    elif opponent_total < creator_total:
-        winner_id, loser_id = creator_id, opponent_id
-        winner_username, loser_username = creator_username, opponent_username
-        outcome_winner, outcome_loser = "🥇 Вы победили!", "😞 Вы проиграли"
-    else:
-        # Ничья
-        await update_balance(opponent_id, game_bid)
-        await update_balance(creator_id, game_bid)
-        await add_dwaw(opponent_id)  
-        await add_dwaw(creator_id)  
+    if creator_total > opponent_total:
+        reward = int(bet_amount * 1.95)
+        await update_balance(creator_id, reward)
+        outcome = f"🟢🟢🟢 Пoбeдил: @{creator_username}"
+        await add_win(creator_id)
+        await add_loss(opponent_id)
+        
+        # Текст для победителя
+        wining_winner = f'💰 Выигрыш: {reward}  PR GRAM'
+        text_winner = f"""
+📊 Результат игры
 
+{wining_winner}
+
+🌟 Игрa: 🎲 Emoji-Game
+👀 Тип игры: {emoji}
+🔢 Кoл-вo эмoдзи: {count}
+
+ℹ️ Рeзультaты:
+@{creator_username} [{creator_total}]
+@{opponent_username} [{opponent_total}]
+
+👀 {outcome}"""
+        
+        # Текст для проигравшего
+        text_loser = f"""
+📊 Результат игры
+
+💰 Его выигрыш: {reward}  PR GRAM
+
+🌟 Игрa: 🎲 Emoji-Game
+👀 Тип игры: {emoji}
+🔢 Кoл-вo эмoдзи: {count}
+
+ℹ️ Рeзультaты:
+@{creator_username} [{creator_total}]
+@{opponent_username} [{opponent_total}]
+
+👀 🔴🔴🔴 Пoбeдил: @{creator_username}"""
+        
+        await bot.send_photo(creator_id, GAME_WIN_PHOTO_URL, caption=text_winner, reply_markup=default_keyboard(creator_id))
+        await bot.send_photo(opponent_id, GAME_LOOSE_PHOTO_URL, caption=text_loser, reply_markup=default_keyboard(opponent_id))
+        
+    elif creator_total < opponent_total:
+        reward = int(bet_amount * 1.95)
+        await update_balance(opponent_id, reward)
+        outcome = f"🟢🟢🟢 Пoбeдил: @{opponent_username}"
+        await add_win(opponent_id)
+        await add_loss(creator_id)
+        
+        # Текст для победителя
+        wining_winner = f'💰 Выигрыш: {reward}  PR GRAM'
+        text_winner = f"""
+📊 Результат игры
+
+{wining_winner}
+
+🌟 Игрa: 🎲 Emoji-Game
+👀 Тип игры: {emoji}
+🔢 Кoл-вo эмoдзи: {count}
+
+ℹ️ Рeзультaты:
+@{creator_username} [{creator_total}]
+@{opponent_username} [{opponent_total}]
+
+👀 {outcome}"""
+        
+        # Текст для проигравшего
+        text_loser = f"""
+📊 Результат игры
+
+💰 Выигрыш: 0  PR GRAM
+
+🌟 Игрa: 🎲 Emoji-Game
+👀 Тип игры: {emoji}
+🔢 Кoл-вo эмoдзи: {count}
+
+ℹ️ Рeзультaты:
+@{creator_username} [{creator_total}]
+@{opponent_username} [{opponent_total}]
+
+👀 🔴🔴🔴 Пoбeдил: @{opponent_username}"""
+        
+        await bot.send_photo(opponent_id, GAME_WIN_PHOTO_URL, caption=text_winner, reply_markup=default_keyboard(opponent_id))
+        await bot.send_photo(creator_id, GAME_LOOSE_PHOTO_URL, caption=text_loser, reply_markup=default_keyboard(creator_id))
+        
+    else:
+        # Ничья - возвращаем ставки обоим игрокам
+        await update_balance(creator_id, bet_amount)
+        await update_balance(opponent_id, bet_amount)
+        outcome = "🟡🟡🟡 Ничья"
+        await add_dwaw(creator_id)
+        await add_dwaw(opponent_id)
+        
+        wining = '💰 Деньги возвращены на баланс'
+        
         text = f"""
 📊 Результат игры
-🎲 @{opponent_username} [{opponent_total}]
-🎲 @{creator_username} [{creator_total}]
 
-🤝 Ничья!
-💰 Ставка возвращена: {game_bid}  PR GRAM 
-"""
-        await bot.send_photo(chat_id=creator_id, caption=text, photo=MAIN_GAME_PHOTO_URL)
-        await bot.send_photo(chat_id=opponent_id, caption=text, photo=MAIN_GAME_PHOTO_URL)
-        return
+{wining}
 
-    # Победитель получает приз
-    reward = int(game_bid * 1.95)
-    await update_balance(winner_id, reward)
-    await add_win(winner_id)
-    await add_loss(loser_id)
+🌟 Игрa: 🎲 Emoji-Game
+👀 Тип игры: {emoji}
+🔢 Кoл-вo эмoдзи: {count}
 
-    text_winner = f"""
-📊 Результат игры
-🎲 @{opponent_username} [{opponent_total}]
-🎲 @{creator_username} [{creator_total}]
+ℹ️ Рeзультaты:
+@{creator_username} [{creator_total}]
+@{opponent_username} [{opponent_total}]
 
-👀 {outcome_winner}
-💰 Выигрыш: {reward}  PR GRAM 
-"""
-
-    text_loser = f"""
-📊 Результат игры
-🎲 @{opponent_username} [{opponent_total}]
-🎲 @{creator_username} [{creator_total}]
-
-👀 {outcome_loser}
-"""
-
-    await bot.send_photo(chat_id=winner_id, caption=text_winner, photo=MAIN_GAME_PHOTO_URL)
-    await bot.send_photo(chat_id=loser_id, caption=text_loser, photo=MAIN_GAME_PHOTO_URL)
+👀 {outcome}"""
+        
+        await bot.send_photo(creator_id, GAME_DRAW_PHOTO_URL, caption=text, reply_markup=default_keyboard(creator_id))
+        await bot.send_photo(opponent_id, GAME_DRAW_PHOTO_URL, caption=text, reply_markup=default_keyboard(opponent_id))
+    await increment_games_today(creator_id)
+    await increment_games_today(opponent_id)
+    # Очистка данных игры
+    for user_id in [creator_id, opponent_id]:
+        if user_id in user_selected_count:
+            del user_selected_count[user_id]
+        if user_id in user_selected_game:
+            del user_selected_game[user_id]
+        if user_id in user_mode:
+            del user_mode[user_id]

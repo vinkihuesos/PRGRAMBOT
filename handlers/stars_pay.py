@@ -23,6 +23,9 @@ class WithdrawState(StatesGroup):
 class AdminCheckState(StatesGroup):
     waiting_for_comment = State()
 
+user_selected_game = {}
+user_selected_count = {}
+
 # Обработчик кнопки "Пополнить баланс"
 @router.callback_query(F.data == "dep")
 async def deposit(callback: CallbackQuery, state: FSMContext):
@@ -132,7 +135,7 @@ async def ask_withdraw_amount(callback: CallbackQuery, state: FSMContext):
     
     await callback.message.answer(
         f"💳 *Вывод PR GRAM*\n\n"
-        f"• Минимум: *100 PR GRAM*\n"
+        f"• Минимум: *10,000 PR GRAM*\n"
         f"💰 *Ваш баланс:* {user['balance']} PR GRAM\n\n"
         f"ℹ️ Введите сумму для вывода:",
         parse_mode='Markdown'
@@ -144,8 +147,8 @@ async def ask_withdraw_amount(callback: CallbackQuery, state: FSMContext):
 async def ask_withdraw_username(message: Message, state: FSMContext):
     user = await get_user(message.chat.id)
 
-    if not message.text.isdigit() or int(message.text) < 100 or int(message.text) > user['balance']:
-        await message.answer("❌ Введите корректную сумму вывода (мин. 100 PR GRAM).")
+    if not message.text.isdigit() or int(message.text) < 10000 or int(message.text) > user['balance']:
+        await message.answer("❌ Введите корректную сумму вывода (мин. 10,000 PR GRAM).")
         return
     
     await state.update_data(amount=message.text)
@@ -183,7 +186,12 @@ async def confirm_withdraw(message: Message, state: FSMContext, bot: Bot):
             reply_markup=keyboard
         )
 
-    await message.answer("🟢 Заявка на вывод отправлена администратору. Ожидайте обработки.")
+    await message.answer(f"""
+🟢 Заявка на вывод отправлена администратору, ожидайте oбрaбoтки🔄
+
+💰 Суммa: {amount} PR GRAM
+
+❗️ Спaм в стoрoну aдминистрaции - зaдeржит Вaш вывoд дo 24 чaсoв!""")
     await remove_balance(message.chat.id, int(amount))
     await state.clear()
 
@@ -194,7 +202,8 @@ async def approve_withdraw(callback: CallbackQuery, bot: Bot):
     amount = data_parts[3]
     
     await bot.send_message(user_id, f"✅ Ваш вывод {amount} PR GRAM был успешно обработан!")
-    await callback.message.edit_text(f"✅ Вывод {amount} PR GRAM подтвержден и обработан.")
+    user = await bot.get_chat(user_id)
+    await callback.message.edit_text(f"✅ Вывод {amount}\nДля ID: @{user.username} || {user_id}\n\nОдобрен")
     await callback.answer()
 
 @router.callback_query(F.data.startswith("reject_with_"))

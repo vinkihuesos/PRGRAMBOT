@@ -13,6 +13,7 @@ from .help import router as help_router
 from .admin import router as admin_router
 from .cryptobot_pay import router as cryptobot_pay_router
 from .stars_pay import router as stars_pay_router  # Добавлен обработчик из файла stars_pay.py
+from .earn import router as earn_router
 
 def register_all_handlers(dp):
     """
@@ -33,3 +34,4 @@ def register_all_handlers(dp):
     dp.include_router(admin_router)
     dp.include_router(cryptobot_pay_router)
     dp.include_router(stars_pay_router)  # Добавлен обработчик оплаты через stars_pay.py
+    dp.include_router(earn_router)

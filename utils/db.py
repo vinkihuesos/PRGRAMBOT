@@ -29,7 +29,13 @@ async def add_user(user_id: int, referrer_id: Optional[int] = None) -> Dict[str,
         "game_stats": [0, 0, 0],
         "referrer_id": referrer_id,
         "referrals": [],
-        "referral_confirmed": False
+        "referral_confirmed": False,
+        "last_daily_bonus": None,
+        "daily_streak": 0,
+        "last_game_bonus": None,
+        "games_today": 0,
+        "last_game_date": None,
+        "claimed_username_bonus": False
     }
     await users_collection.insert_one(new_user)
     return new_user
@@ -78,7 +84,6 @@ async def add_new_param(param: str, value: Any) -> None:
 async def process_referral(user_id: int, referrer_id: int, bot: Bot) -> None:
     """Обрабатывает реферальную систему: добавляет пользователя и уведомляет пригласившего."""
     user = await get_user(user_id)
-    
     if not user or user.get("referral_confirmed", False):
         return
 
@@ -90,6 +95,7 @@ async def process_referral(user_id: int, referrer_id: int, bot: Bot) -> None:
     try:
         new_user = await bot.get_chat(user_id)
         username = f"@{new_user.username}" if new_user.username else f"ID: {user_id}"
+        referrer_username = await bot.get_chat(referrer_id)
     except Exception as e:
         username = f"ID: {user_id}"
     
@@ -97,7 +103,9 @@ async def process_referral(user_id: int, referrer_id: int, bot: Bot) -> None:
     try:
         await update_balance(referrer_id, 1000)
         referrer = await get_user(referrer_id)
+        new_mem = await get_user(user_id)
         await bot.send_message(referrer_id, f"🎉 Пользователь {username} зарегистрировался по вашей ссылке!\n💰Вы заработали: +1000 PR GRAM ️\n👛Ваш баланс: {referrer['balance']} PR GRAM ")
+        await bot.send_message(user_id, f"🎉 Вы перешли по ссылке {referrer_username.username}\n💰Вы заработали: +1000 PR GRAM ️\n👛Ваш баланс: {new_mem['balance']} PR GRAM ")
         
     except Exception:
         pass  # Игнорируем ошибку, если бот не может отправить сообщение
@@ -107,10 +115,45 @@ async def get_all_users_ids() -> List[Dict[str, Any]]:
     """Возвращает список пользователей, у которых баланс больше 0."""
     return [user async for user in users_collection.find({"balance": {"$gt": 0}}, {"user_id": 1, "balance": 1})]
 
+async def increment_games_today(user_id: int):
+    today = datetime.now().date()
+    user = await get_user(user_id)
+    
+    last_game_date = user.get("last_game_date")
+    if last_game_date and last_game_date.date() == today:
+        # Уже играл сегодня - увеличиваем счетчик
+        await users_collection.update_one(
+            {"user_id": user_id},
+            {"$inc": {"games_today": 1}}
+        )
+    else:
+        # Первая игра сегодня - сбрасываем счетчик
+        await users_collection.update_one(
+            {"user_id": user_id},
+            {"$set": {"games_today": 1, "last_game_date": datetime.now()}}
+        )
 
-# async def u():
-#     from random import randint
-#     for i in range(64):
-#         await users_collection.update_one({"user_id": 861704297}, {"$push": {"referrals": randint(0,1000)}})
+# async def add_missing_bonus_fields():
+#     """Добавляет недостающие поля для бонусов всем пользователям"""
+#     from datetime import datetime
+    
+#     # Добавляем только те поля, которых нет у пользователя
+#     await users_collection.update_many(
+#         {},  # Все документы
+#         {
+#             "$set": {
+#                 "last_daily_bonus": None,
+#                 "daily_streak": 0,
+#                 "last_game_bonus": None,
+#                 "games_today": 0,
+#                 "last_game_date": None,
+#                 "claimed_username_bonus": False
+#             }
+#         },
+#         upsert=False  # Не создавать новые документы, только обновлять существующие
+#     )
+#     print("✅ Добавлены недостающие поля для бонусов")
+
+# # Запускаем один раз
 # import asyncio
-# asyncio.run(u())
+# asyncio.run(add_missing_bonus_fields())

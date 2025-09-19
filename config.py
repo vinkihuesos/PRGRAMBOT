@@ -8,6 +8,7 @@ API_TOKEN = '8488496888:AAE4cMTS4zyXsT0C6FmbJEGhORQdqBde-NE'
 API_TOKEN_TEST = '7276829561:AAFQYjZ001d6-W-9p1rHMxksYXZu3ECWrg4'
 CHANNEL_USERNAME = "grampengu"  # Замените на свой канал
 BOT_USERNAME = "pengugram_bot"
+BOT_USERNAME_TEST = 'RNDMLY_TEST_bot'
 MONGO_URI = "mongodb+srv://sladk1y:zxcasdqwe@cas.s1v4j.mongodb.net/"
 DB_NAME = "pengugram_bot"
 
@@ -24,6 +25,10 @@ ADMIN_URL = 'https://vignette.wikia.nocookie.net/walkingdead/images/1/16/Walking
 MAIN_WALLET_PHOTO_URL = 'https://media.discordapp.net/attachments/1260397703003639974/1416515033633915066/photo_2025-09-13_23-01-19.jpg?ex=68c71fed&is=68c5ce6d&hm=63e87fe6d699d9df9e8f5b7f75a189b97e3b2fb4258c04695f8b1c2a908078c9&=&format=webp&width=1026&height=684'
 MAIN_PROFILE_PHOTO_URL = 'https://media.discordapp.net/attachments/1260397703003639974/1416515710997369027/photo_2025-09-13_22-53-38.jpg?ex=68c7208f&is=68c5cf0f&hm=c365f4047c5366c71e48f7bed129b9f38a91e29c770db48533e47e714f9516c1&=&format=webp&width=1056&height=704'
 MAGIC_CARD_PHOTO_URL_INVISIBLE = 'https://media.discordapp.net/attachments/1342809094444023850/1343264305000349716/Untitled_1.png?ex=67c3e41e&is=67c2929e&hm=8fa88e56e9ca2b0f586cf3e103028c9f8d8b0344756aac478fc93aae700f76a6&=&format=webp&quality=lossless&width=971&height=559'
+
+GAME_WIN_PHOTO_URL = 'https://media.discordapp.net/attachments/1260397703003639974/1418571660575117342/photo_2025-09-14_13-56-13.jpg?ex=68ce9b4f&is=68cd49cf&hm=62450bf9c844e6a944b2c63ee9f286e2f1a37f9e625ab1e8577d0891ab710f2b&=&format=webp&width=1026&height=684'
+GAME_LOOSE_PHOTO_URL = 'https://media.discordapp.net/attachments/1260397703003639974/1418571661221036144/photo_2025-09-14_14-52-33.jpg?ex=68ce9b4f&is=68cd49cf&hm=e248f0988d00dfc54a1e31ab40fa45b8cc59528086cb8b028eb5d28d4fe69387&=&format=webp&width=1026&height=684'
+GAME_DRAW_PHOTO_URL = 'https://media.discordapp.net/attachments/1260397703003639974/1418572486051758090/photo_2025-09-19_15-18-19.jpg?ex=68ce9c14&is=68cd4a94&hm=b491824d23831518ed20a81036e3d229c129d0aded1a66eb4c6aa9d78e373eb3&=&format=webp&width=1056&height=704'
 
 
 

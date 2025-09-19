@@ -140,7 +140,7 @@ async def play_game_wbot(message: types.Message, bot: Bot, state: FSMContext, us
     await message.answer("Ждем итогов игры 🔥")
     await asyncio.sleep(4)
 
-    await determine_winner_wbot(message, bot, user_id, bet_amount, player_total, bot_total, emoji)
+    await determine_winner_wbot(message, bot, user_id, bet_amount, player_total, bot_total, emoji, count)
 
 async def send_game_turn_wbot(bot: Bot, message: types.Message, emoji: str, count: int):
     player_total, bot_total = 0, 0
@@ -151,7 +151,18 @@ async def send_game_turn_wbot(bot: Bot, message: types.Message, emoji: str, coun
 """, reply_markup=default_keyboard(message.from_user.id))
     for _ in range(count):
         player_dice = await bot.send_dice(message.chat.id, emoji=emoji)
-        player_total += player_dice.dice.value
+        if emoji == '⚽️':
+            if player_dice.dice.value <= 2:
+                player_total += 0
+            else:
+                player_total += 1
+        if emoji == '🏀':
+            if player_dice.dice.value <= 3:
+                player_total += 0
+            else:
+                player_total += 1
+        else:
+            player_total += player_dice.dice.value
     await message.answer(f"""
 👀 Ход @{BOT_USERNAME}
             
@@ -159,34 +170,65 @@ async def send_game_turn_wbot(bot: Bot, message: types.Message, emoji: str, coun
 """)
     for _ in range(count):
         bot_dice = await bot.send_dice(message.chat.id, emoji=emoji)
-        bot_total += bot_dice.dice.value
+        if emoji == '⚽️':
+            if bot_dice.dice.value <= 2:
+                player_total += 0
+            else:
+                player_total += 1
+        if emoji == '🏀':
+            if bot_dice.dice.value <= 3:
+                player_total += 0
+            else:
+                player_total += 1
+        else:
+            bot_total += bot_dice.dice.value
 
     return bot_total, player_total
 
-async def determine_winner_wbot(message: types.Message, bot: Bot, user_id: int, bet_amount: int, player_total: int, bot_total: int, emoji: str):
+async def determine_winner_wbot(message: types.Message, bot: Bot, user_id: int, bet_amount: int, player_total: int, bot_total: int, emoji: str, count: int):
     if player_total > bot_total:
         reward = int(bet_amount * 1.8)
         await update_balance(user_id, reward)
-        outcome = "🥇 Вы победили!"
+        outcome = f"🟢🟢🟢 Пoбeдил: @{message.from_user.username}"
         await add_win(user_id)
     elif player_total < bot_total:
         reward = 0
-        outcome = "😞 Бот победил!"
+        outcome = F"🔴🔴🔴 Пoбeдил: @{BOT_USERNAME}"
         await add_loss(user_id)
     else:
         reward = bet_amount  # Возвращаем ставку в случае ничьи
         await update_balance(user_id, reward)
-        outcome = "🤝 Ничья!"
+        outcome = "🟡🟡🟡 Ничья"
         await add_dwaw(user_id)
+    
+    if outcome.startswith('🟢'):
+        wining = f'💰 Выигрыш: {reward}  PR GRAM'
+    elif outcome.startswith('🔴'):
+        wining = f'💰 Его Выигрыш: {reward}  PR GRAM'
+    else:
+        wining = '💰 Деньги возвращены на баланс'
 
     text=f"""
 📊 Результат игры
-{emoji} @{message.from_user.username} [{player_total}]
-{emoji} @{BOT_USERNAME} [{bot_total}]
 
-👀 {outcome}
-💰 Выигрыш: {reward}  PR GRAM """
-    await bot.send_photo(message.chat.id, MAIN_GAME_PHOTO_URL, caption=text, reply_markup=default_keyboard(message.from_user.id))
+{wining}
+
+🌟 Игрa: 🎲 Emoji-Game
+👀 Тип игры: {emoji}
+🔢 Кoл-вo эмoдзи: {count}
+
+ℹ️ Рeзультaты:
+@{message.from_user.username} [{player_total}]
+@{BOT_USERNAME} [{bot_total}]
+
+👀 {outcome}"""
+    if outcome.startswith('🟢'):
+        await bot.send_photo(message.chat.id, GAME_WIN_PHOTO_URL, caption=text, reply_markup=default_keyboard(message.from_user.id))
+    elif outcome.startswith('🔴'):
+        await bot.send_photo(message.chat.id, GAME_LOOSE_PHOTO_URL, caption=text, reply_markup=default_keyboard(message.from_user.id))
+    else:
+        await bot.send_photo(message.chat.id, GAME_DRAW_PHOTO_URL, caption=text, reply_markup=default_keyboard(message.from_user.id))
+    await increment_games_today(user_id)
     del user_selected_count[user_id]
     del user_selected_game[user_id]
     del user_mode[message.from_user.id]
