@@ -172,14 +172,14 @@ async def send_game_turn_wbot(bot: Bot, message: types.Message, emoji: str, coun
         bot_dice = await bot.send_dice(message.chat.id, emoji=emoji)
         if emoji == '⚽️':
             if bot_dice.dice.value <= 2:
-                player_total += 0
+                bot_total += 0
             else:
-                player_total += 1
+                bot_total += 1
         if emoji == '🏀':
             if bot_dice.dice.value <= 3:
-                player_total += 0
+                bot_total += 0
             else:
-                player_total += 1
+                bot_total += 1
         else:
             bot_total += bot_dice.dice.value
 
